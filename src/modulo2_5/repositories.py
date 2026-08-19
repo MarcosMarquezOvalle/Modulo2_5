@@ -3,8 +3,9 @@ from __future__ import annotations
 import sqlite3
 from datetime import datetime
 from threading import Lock
-from typing import List, Optional
-from models import Message, Sender
+
+from models import Message
+from models import Sender
 
 
 class SqliteRepository:
@@ -38,7 +39,7 @@ class SqliteRepository:
                     channel TEXT NOT NULL,
                     contact TEXT NOT NULL
                 )
-                """
+                """,
             )
             self._conn.execute(
                 """
@@ -50,7 +51,7 @@ class SqliteRepository:
                     timestamp TEXT NOT NULL,
                     FOREIGN KEY(sender_id) REFERENCES senders(id) ON DELETE CASCADE
                 )
-                """
+                """,
             )
 
     # Sender operations
@@ -62,23 +63,49 @@ class SqliteRepository:
             )
         return sender
 
-    def get_sender(self, sender_id: str) -> Optional[Sender]:
-        cur = self._conn.execute("SELECT id, name, channel, contact FROM senders WHERE id = ?", (sender_id,))
+    def get_sender(self, sender_id: str) -> Sender | None:
+        cur = self._conn.execute(
+            "SELECT id, name, channel, contact FROM senders WHERE id = ?",
+            (sender_id,),
+        )
         row = cur.fetchone()
         if row is None:
             return None
-        return Sender(id=row["id"], name=row["name"], channel=row["channel"], contact=row["contact"])
+        return Sender(
+            id=row["id"],
+            name=row["name"],
+            channel=row["channel"],
+            contact=row["contact"],
+        )
 
-    def get_sender_by_name(self, sender_name: str) -> Optional[Sender]:
-        cur = self._conn.execute("SELECT id, name, channel, contact FROM senders WHERE name = ?", (sender_name,))
+    def get_sender_by_name(self, sender_name: str) -> Sender | None:
+        cur = self._conn.execute(
+            "SELECT id, name, channel, contact FROM senders WHERE name = ?",
+            (sender_name,),
+        )
         row = cur.fetchone()
         if row is None:
             return None
-        return Sender(id=row["id"], name=row["name"], channel=row["channel"], contact=row["contact"])
+        return Sender(
+            id=row["id"],
+            name=row["name"],
+            channel=row["channel"],
+            contact=row["contact"],
+        )
 
-    def list_senders(self) -> List[Sender]:
-        cur = self._conn.execute("SELECT id, name, channel, contact FROM senders ORDER BY name")
-        return [Sender(id=r["id"], name=r["name"], channel=r["channel"], contact=r["contact"]) for r in cur.fetchall()]
+    def list_senders(self) -> list[Sender]:
+        cur = self._conn.execute(
+            "SELECT id, name, channel, contact FROM senders ORDER BY name",
+        )
+        return [
+            Sender(
+                id=r["id"],
+                name=r["name"],
+                channel=r["channel"],
+                contact=r["contact"],
+            )
+            for r in cur.fetchall()
+        ]
 
     def remove_sender(self, sender_id: str) -> bool:
         with self._lock, self._conn:
@@ -87,7 +114,11 @@ class SqliteRepository:
 
     # Message operations
     def add_message(self, message: Message) -> Message:
-        ts = message.timestamp.isoformat() if isinstance(message.timestamp, datetime) else str(message.timestamp)
+        ts = (
+            message.timestamp.isoformat()
+            if isinstance(message.timestamp, datetime)
+            else str(message.timestamp)
+        )
         with self._lock, self._conn:
             self._conn.execute(
                 "REPLACE INTO messages (id, sender_id, recipient, content, timestamp) VALUES (?, ?, ?, ?, ?)",
@@ -95,7 +126,7 @@ class SqliteRepository:
             )
         return message
 
-    def get_message(self, message_id: str) -> Optional[Message]:
+    def get_message(self, message_id: str) -> Message | None:
         cur = self._conn.execute(
             "SELECT id, sender_id, recipient, content, timestamp FROM messages WHERE id = ?",
             (message_id,),
@@ -103,28 +134,64 @@ class SqliteRepository:
         row = cur.fetchone()
         if row is None:
             return None
-        ts = datetime.fromisoformat(row["timestamp"]) if row["timestamp"] else datetime.utcnow()
-        return Message(id=row["id"], sender_id=row["sender_id"], recipient=row["recipient"], content=row["content"], timestamp=ts)
+        ts = (
+            datetime.fromisoformat(row["timestamp"])
+            if row["timestamp"]
+            else datetime.utcnow()
+        )
+        return Message(
+            id=row["id"],
+            sender_id=row["sender_id"],
+            recipient=row["recipient"],
+            content=row["content"],
+            timestamp=ts,
+        )
 
-    def list_messages(self) -> List[Message]:
-        cur = self._conn.execute("SELECT id, sender_id, recipient, content, timestamp FROM messages ORDER BY timestamp DESC")
+    def list_messages(self) -> list[Message]:
+        cur = self._conn.execute(
+            "SELECT id, sender_id, recipient, content, timestamp FROM messages ORDER BY timestamp DESC",
+        )
         rows = cur.fetchall()
-        messages: List[Message] = []
+        messages: list[Message] = []
         for r in rows:
-            ts = datetime.fromisoformat(r["timestamp"]) if r["timestamp"] else datetime.utcnow()
-            messages.append(Message(id=r["id"], sender_id=r["sender_id"], recipient=r["recipient"], content=r["content"], timestamp=ts))
+            ts = (
+                datetime.fromisoformat(r["timestamp"])
+                if r["timestamp"]
+                else datetime.utcnow()
+            )
+            messages.append(
+                Message(
+                    id=r["id"],
+                    sender_id=r["sender_id"],
+                    recipient=r["recipient"],
+                    content=r["content"],
+                    timestamp=ts,
+                ),
+            )
         return messages
 
-    def get_messages_by_sender(self, sender_id: str) -> List[Message]:
+    def get_messages_by_sender(self, sender_id: str) -> list[Message]:
         cur = self._conn.execute(
             "SELECT id, sender_id, recipient, content, timestamp FROM messages WHERE sender_id = ? ORDER BY timestamp DESC",
             (sender_id,),
         )
         rows = cur.fetchall()
-        messages: List[Message] = []
+        messages: list[Message] = []
         for r in rows:
-            ts = datetime.fromisoformat(r["timestamp"]) if r["timestamp"] else datetime.utcnow()
-            messages.append(Message(id=r["id"], sender_id=r["sender_id"], recipient=r["recipient"], content=r["content"], timestamp=ts))
+            ts = (
+                datetime.fromisoformat(r["timestamp"])
+                if r["timestamp"]
+                else datetime.utcnow()
+            )
+            messages.append(
+                Message(
+                    id=r["id"],
+                    sender_id=r["sender_id"],
+                    recipient=r["recipient"],
+                    content=r["content"],
+                    timestamp=ts,
+                ),
+            )
         return messages
 
     def remove_message(self, message_id: str) -> bool:

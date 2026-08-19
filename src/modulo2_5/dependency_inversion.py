@@ -1,18 +1,21 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Protocol, runtime_checkable
+from typing import Protocol
+from typing import runtime_checkable
 
-from models import Message, Sender
-from repositories_memory import MemoryRepository
+from models import Message
+from models import Sender
 from repositories import SqliteRepository
+from repositories_memory import MemoryRepository
 
 repo = SqliteRepository()
 
+
 @runtime_checkable
 class Repository(Protocol):
-    def save_message(self, sender_name: str, recipient: str, content: str) -> None:
-        ...
+    def save_message(self, sender_name: str, recipient: str, content: str) -> None: ...
+
 
 class Repository_sqlite:
     def __init__(self, sqlite_repo: SqliteRepository) -> None:
@@ -24,8 +27,11 @@ class Repository_sqlite:
         if sender is None:
             sender = Sender(name=sender_name, channel=sender_name, contact=recipient)
             sender = self._sqlite_repo.add_sender(sender)
-        self._sqlite_repo.add_message(Message(sender_id=sender.id, recipient=recipient, content=content))
+        self._sqlite_repo.add_message(
+            Message(sender_id=sender.id, recipient=recipient, content=content),
+        )
         print(f"Message saved on Sqlite: {content}")
+
 
 class Repository_memory:
     def __init__(self, memory_repository: MemoryRepository) -> None:
@@ -37,19 +43,22 @@ class Repository_memory:
         if sender is None:
             sender = Sender(name=sender_name, channel=sender_name, contact=recipient)
             sender = self._memory_repo.add_sender(sender)
-        self._memory_repo.add_message(Message(sender_id=sender.id, recipient=recipient, content=content))
+        self._memory_repo.add_message(
+            Message(sender_id=sender.id, recipient=recipient, content=content),
+        )
         print(f"Message saved on Memory: {content}")
+
 
 @runtime_checkable
 class MessageSender(Protocol):
     print("MessageSender.")
 
-    def send(self, recipient: str, message: str) -> None:
-        ...
+    def send(self, recipient: str, message: str) -> None: ...
 
 
 class EmailSender:
     print("EmailSender.")
+
     def __init__(self, smtp_client: object | None = None) -> None:
         self._smtp_client = smtp_client
 
@@ -63,6 +72,7 @@ class EmailSender:
 
 class SmsSender:
     print("SmsSender.")
+
     def __init__(self, sms_client: object | None = None) -> None:
         self._sms_client = sms_client
 
@@ -76,6 +86,7 @@ class SmsSender:
 
 class SlackSender:
     print("SlackSender.")
+
     def __init__(self, slack_client: object | None = None) -> None:
         self._slack_client = slack_client
 
@@ -135,7 +146,13 @@ class NotificationApp:
     def __init__(self, provider: SenderProvider) -> None:
         self._provider = provider
 
-    def dispatch(self, repo: Repository, channel: str, recipient: str, message: str) -> None:
+    def dispatch(
+        self,
+        repo: Repository,
+        channel: str,
+        recipient: str,
+        message: str,
+    ) -> None:
         sender = self._provider.get_sender(channel)
         service = NotificationService(sender)
         service.send(Notification(recipient=recipient, message=message))
@@ -161,8 +178,9 @@ def main() -> None:
     app.dispatch(repo, "sms", "+1234567890", "Hello via SMS!")
     app.dispatch(repo, "slack", "#general", "Hello via Slack!")
 
+
 if __name__ == "__main__":
-    main()  
+    main()
 
 __all__ = [
     "EmailSender",

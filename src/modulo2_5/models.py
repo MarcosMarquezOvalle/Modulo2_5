@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from datetime import datetime
-from typing import Optional
 import uuid
+from dataclasses import dataclass
+from dataclasses import field
+from datetime import datetime
 
 
 @dataclass
